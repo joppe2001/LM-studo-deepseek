@@ -1,0 +1,371 @@
+body {
+    background-color: #1a1a1a;
+    color: #fff;
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.container {
+    background-color: #2d2d2d;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 900px;
+    margin: 40px auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+textarea {
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    font-family: inherit;
+    border-radius: 8px;
+    border: 1px solid #404040;
+    background-color: #1a1a1a;
+    color: #fff;
+    font-size: 15px;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #6b46c1;
+    box-shadow: 0 0 0 2px rgba(107, 70, 193, 0.2);
+}
+
+button {
+    padding: 12px 24px;
+    cursor: pointer;
+    background-color: #6b46c1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background-color: #805ad5;
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+#output {
+    display: none; /* Hide the original textarea */
+}
+
+#formatted-output {
+    background-color: #1a1a1a;
+    min-height: 300px;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #404040;
+    overflow-y: auto;
+    color: #fff;
+    line-height: 1.6;
+}
+
+/* Style for code blocks */
+#formatted-output pre {
+    background: #011627 !important;
+    border-radius: 6px;
+    padding: 1em;
+    margin: 1em 0;
+    overflow-x: auto;
+    position: relative;
+}
+
+#formatted-output code {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 14px;
+}
+
+/* Style for inline code */
+#formatted-output :not(pre) > code {
+    background: #011627;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Style for LaTeX blocks */
+.katex-display {
+    margin: 1em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Copy button styles */
+.copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 6px 12px;
+    background: rgba(107, 70, 193, 0.2);
+    border: 1px solid #6b46c1;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copy-button:hover {
+    background: rgba(107, 70, 193, 0.4);
+    transform: translateY(0);
+}
+
+::placeholder {
+    color: #666;
+}
+
+/* Add some spacing for code blocks with copy buttons */
+pre {
+    padding-top: 2.5em !important;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+    color: #637777;
+    font-style: italic;
+}
+
+.token.function {
+    color: #82AAFF;
+}
+
+.token.keyword {
+    color: #c792ea;
+}
+
+.token.string {
+    color: #ecc48d;
+}
+
+.token.number {
+    color: #F78C6C;
+}
+
+.token.operator {
+    color: #89DDFF;
+}
+
+.token.class-name {
+    color: #FFCB8B;
+}
+
+.token.variable {
+    color: #d7dbe0;
+}
+
+.token.punctuation {
+    color: #89DDFF;
+}
+
+.chat-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#conversation-select {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #404040;
+    font-size: 14px;
+}
+
+.new-chat,
+.delete-chat {
+    padding: 10px 16px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.delete-chat {
+    background-color: #dc2626;
+}
+
+.delete-chat:hover {
+    background-color: #ef4444;
+}
+
+/* Chat message styles */
+.chat-message {
+    margin-bottom: 24px;
+    padding: 16px;
+    border-radius: 8px;
+    background: #2d2d2d;
+}
+
+.chat-message.user {
+    background: #1a1a1a;
+}
+
+.message-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #9ca3af;
+}
+
+.message-content {
+    line-height: 1.6;
+}
+
+.thinking-container {
+    margin: 10px 0;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    background-color: #1a1a1a;
+    overflow: hidden;
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #2d2d2d;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.thinking-header:hover {
+    background-color: #363636;
+}
+
+.thinking-title {
+    font-weight: 600;
+    color: #6b46c1;
+    flex: 1;
+}
+
+.thinking-time {
+    color: #9ca3af;
+    margin-right: 16px;
+    font-size: 0.9em;
+}
+
+.thinking-toggle {
+    color: #6b46c1;
+    transition: transform 0.2s ease;
+}
+
+.thinking-content {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Expanded state */
+.thinking-container.expanded .thinking-content {
+    padding: 16px;
+    max-height: 1000px; /* Adjust based on your needs */
+}
+
+.thinking-container.expanded .thinking-toggle {
+    transform: rotate(180deg);
+}
+
+/* Style paragraphs inside thinking content */
+.thinking-content p {
+    margin: 0.5em 0;
+    color: #d1d5db;
+}
+
+.thinking-content p:first-child {
+    margin-top: 0;
+}
+
+.thinking-content p:last-child {
+    margin-bottom: 0;
+}
+
+.answer-content {
+    margin-top: 16px;
+    padding: 16px;
+    background: #2d2d2d;
+    border-radius: 8px;
+    line-height: 1.6;
+}
+
+.thinking-container {
+    margin: 10px 0;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    background-color: #1a1a1a;
+    overflow: hidden;
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: #2d2d2d;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.thinking-content {
+    padding: 0 16px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.thinking-container.expanded .thinking-content {
+    padding: 16px;
+    max-height: none;
+    opacity: 1;
+}
+
+.answer-content {
+    margin-top: 16px;
+    padding: 16px;
+    background: #2d2d2d;
+    border-radius: 8px;
+    line-height: 1.6;
+}
+
+/* Ensure thinking toggle arrow rotates properly */
+.thinking-container.expanded .thinking-toggle {
+    transform: rotate(180deg);
+}
+
+.thinking-answer-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.answer-content {
+    margin-top: 0 !important;  /* Override previous margin */
+    margin-left: 16px;  /* Indent the answer section */
+    padding: 16px;
+    background: #2d2d2d;
+    border-radius: 8px;
+    line-height: 1.6;
+}
+
+.thinking-container {
+    margin: 0 !important;  /* Override previous margin */
+}
