@@ -10,4 +10,4 @@ class Config:
     STREAM_CHUNK_SIZE: int = 1024
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    NGROK_AUTH_TOKEN: str = "2sH1hYUSccOJBXEwUX4ftSW6Vxf_61sHvyhChFDf7VfN9dFYA"
+    NGROK_AUTH_TOKEN: int = None
