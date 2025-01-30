@@ -49,13 +49,66 @@
 
         marked.setOptions({
             highlight: function (code, lang) {
-                if (Prism.languages[lang]) {
-                    return Prism.highlight(code, Prism.languages[lang], lang);
+                try {
+                    // Clean up code formatting first
+                    code = code
+                        .replace(/^```\w+\s*/, '')
+                        .replace(/```$/, '')
+                        .split('\n')
+                        .map(line => {
+                            // Preserve indentation instead of trimming all spaces
+                            const indent = line.match(/^[\s\t]*/)[0];
+                            const content = line.slice(indent.length); // Don't use `.trim()`
+                            return indent + content; // Restore original indentation
+                        })
+                        .join('\n');
+
+
+                    // Default to plaintext if language isn't supported
+                    if (!Prism.languages[lang]) {
+                        console.warn(`Language '${lang}' not supported, falling back to plaintext`);
+                        return code;
+                    }
+
+                    // Apply syntax highlighting while preserving indentation
+                    const highlighted = Prism.highlight(code, Prism.languages[lang], lang);
+
+                    // Fix any indentation lost during highlighting
+                    return highlighted
+                        .split('\n')
+                        .map(line => {
+                            // Get original line's indentation
+                            const originalLine = code.split('\n')[0];
+                            const indent = originalLine.match(/^[\s\t]*/)[0];
+                            return indent + line;
+                        })
+                        .join('\n');
+
+                } catch (error) {
+                    console.error('Syntax highlighting failed:', error);
+                    return code; // Fallback to plain text
                 }
-                return code;
-            },
-            langPrefix: 'language-'  // This is crucial for Prism.js to work
+            }
         });
+
+        function renderContent(element) {
+            // First render any code blocks
+            Prism.highlightAllUnder(element);
+
+            // Then render LaTeX - make sure to handle both inline and display math
+            renderMathInElement(element, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ],
+                throwOnError: false,
+                trust: true
+            });
+
+            addCopyButtons();
+        }
 
         function formatTime(ms) {
             if (ms < 1000) return `${ms}ms`;
@@ -72,8 +125,86 @@
         let timerId = null;
         let finalThinkingTime = null;
 
+        function preprocessText(text) {
+            // Define common programming languages - escape special characters
+            const languages = [
+                'python', 'javascript', 'java', 'html', 'css', 'cpp',
+                'c\\+\\+', 'c', 'typescript', 'ruby', 'php', 'swift',
+                'kotlin', 'rust', 'go', 'sql', 'bash', 'shell', 'json',
+                'yaml', 'xml', 'markdown', 'md'
+            ].join('|');
+
+            // Add common code indicators
+            const codeIndicators = [
+                'def\\s+\\w+\\s*\\(', // Python function
+                'function\\s+\\w+\\s*\\(', // JavaScript function
+                'fn\\s+\\w+\\s*\\(', // Rust function
+                'func\\s+\\w+\\s*\\(', // Go function
+                'class\\s+(\\w+)',
+                'class\\s+\\w+\\s*:?',
+                'from\\s+\\w+\\s+import', // Python imports
+                'const\\s+\\w+\\s*=', // Constants
+                'let\\s+\\w+\\s*=', // JavaScript variables
+                'var\\s+\\w+\\s*=' // Variables
+            ].join('|');
+
+            // Fix duplicate "classclass" issue
+            text = text.replace(/\bclass\s+(\w+)/g, 'class $1');
+
+            // Ensure class declarations start on a new line
+            text = text.replace(/(\w+)(class\s+\w+)/g, '$1\n$2');
+
+            // Create regex pattern for matching code blocks with these languages
+            const codeBlockPattern = new RegExp(
+                    `\`\`\`(${languages})[^\n]*\n`,
+                'g'
+            );
+
+            // Create regex for code indicators
+            const codeIndicatorPattern = new RegExp(
+                    `^(${codeIndicators})`,
+                'gm'
+            );
+
+            return text
+                // Ensure code blocks start with newline
+                .replace(/```(\w+)/g, '\n```$1\n')
+                // Force newline after language identifier
+                .replace(codeBlockPattern, '```$1\n')
+                // Add newline before code indicators at start of lines
+                .replace(codeIndicatorPattern, '\n$1')
+                // // Ensure proper spacing around code blocks
+                // .replace(/```(\w+)\s*\n/g, '\n```$1\n')
+                // Fix potential merged code blocks
+                .replace(/```\s*```/g, '```\n\n```')
+                // Ensure code blocks end with newline
+                .replace(/```(\w+)/g, '\n```$1\n') // Ensure newline after language identifier
+                .replace(/```(\w+)\s*\n/g, '\n```$1\n') // Ensure spacing
+                // Fix numbered lists
+                .replace(/(\d+\..*?)(\d+\.)/g, '$1\n$2')
+                // Clean up multiple blank lines
+                .replace(/\n\s*\n\s*\n/g, '\n\n')
+                // Ensure consistent line endings
+                .split('\n')
+                .map(line => line.trim())
+                .join('\n')
+                // Clean up any leading/trailing newlines
+                .trim();
+        }
+
         function processThinkingTags(text, aiContent) {
+            text = preprocessText(text);
             const messageId = Date.now().toString();
+
+            // Add code block preprocessing
+            function preprocessCodeBlocks(text) {
+                return text.replace(/```(\w+)([^\n]*)/, (match, lang, rest) => {
+                    // Ensure there's a newline after the language identifier
+                    return `\`\`\`${lang}\n${rest.trim()}`;
+                });
+            }
+
+            text = preprocessCodeBlocks(text);
 
             // Check if thinking section already exists for this AI message
             const existingThinking = aiContent.querySelector('.thinking-container');
@@ -141,13 +272,15 @@
                         const thinkingContainer = aiContent.querySelector('.thinking-content');
                         if (thinkingContainer) {
                             thinkingContainer.innerHTML = marked.parse(thinkingContent);
+                            renderContent(thinkingContainer); // Add this line
                         }
 
-                        // Update answer content with everything after </think>
+                        // Update answer content
                         const answerText = text.split('</think>')[1] || '';
                         const answerContainer = aiContent.querySelector('.answer-content');
                         if (answerContainer) {
                             answerContainer.innerHTML = marked.parse(answerText.trim());
+                            renderContent(answerContainer); // Add this line
                         }
 
                         // Stop thinking mode
@@ -167,6 +300,7 @@
                         const container = aiContent.querySelector('.thinking-content');
                         if (container) {
                             container.innerHTML = marked.parse(thinkingContent);
+                            renderContent(container); // Add this line
                         }
                     }
                 }
@@ -180,7 +314,8 @@
                 }
                 const answerContainer = aiContent.querySelector('.answer-content');
                 if (answerContainer) {
-                    answerContainer.innerHTML = marked.parse(text);
+                    answerContainer.innerHTML = marked.parse(text.trim());
+                    renderContent(answerContainer); // Add this line
                 }
             }
         }
@@ -350,16 +485,7 @@
 
                     // Process thinking tags and update content
                     processThinkingTags(fullText, aiContent);
-
-                    // Re-render LaTeX and code highlighting
-                    renderMathInElement(aiContent, {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false}
-                        ]
-                    });
-                    Prism.highlightAllUnder(aiContent);
-                    addCopyButtons();
+                    renderContent(aiContent); // Add this line
 
                     formattedOutput.scrollTop = formattedOutput.scrollHeight;
                 }
