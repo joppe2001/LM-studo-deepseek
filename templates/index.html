@@ -166,6 +166,33 @@
                 'gm'
             );
 
+            // Add function to preserve indentation
+            function preserveIndentation(codeBlock) {
+                // Split into lines and remove empty lines at start/end
+                let lines = codeBlock.trim().split('\n');
+
+                // Find minimum indentation (excluding empty lines)
+                const minIndent = lines
+                    .filter(line => line.trim().length > 0)
+                    .map(line => line.match(/^\s*/)[0].length)
+                    .reduce((min, current) => Math.min(min, current), Infinity);
+
+                // Remove common indentation but preserve relative indentation
+                lines = lines.map(line => {
+                    if (line.trim().length === 0) return '';
+                    return line.slice(Math.min(minIndent, line.match(/^\s*/)[0].length));
+                });
+
+                // Add consistent base indentation
+                return lines.map(line => line ? '    ' + line : line).join('\n');
+            }
+
+            // Process code blocks with preserved indentation
+            text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                const formattedCode = preserveIndentation(code);
+                return `\`\`\`${lang || ''}\n${formattedCode}\n\`\`\``;
+            });
+
             return text
                 // Ensure code blocks start with newline
                 .replace(/```(\w+)/g, '\n```$1\n')
@@ -182,13 +209,11 @@
                 .replace(/```(\w+)\s*\n/g, '\n```$1\n') // Ensure spacing
                 // Fix numbered lists
                 .replace(/(\d+\..*?)(\d+\.)/g, '$1\n$2')
-                // Clean up multiple blank lines
                 .replace(/\n\s*\n\s*\n/g, '\n\n')
                 // Ensure consistent line endings
                 .split('\n')
-                .map(line => line.trim())
+                .map(line => line) // Remove the .trim() here to preserve indentation
                 .join('\n')
-                // Clean up any leading/trailing newlines
                 .trim();
         }
 
